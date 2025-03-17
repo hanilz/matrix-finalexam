@@ -1,4 +1,4 @@
-# Hanil Zarbailov Final Exam Repo - Terraform
+# Hanil Zarbailov Final Exam Repo - Docker
 This folder includes the `app.py` file which runs a Flask app, a corresponding `requirements.txt` file and a multi-stage (builder-runner) `Dockerfile` for building the application image.
 
 ## Running Locally
