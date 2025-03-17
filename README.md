@@ -8,3 +8,5 @@ All necessary files and documentation is in `docker/`
 All necessary files and documentation is in `fix-app/`
 ## Jenkins
 All necessary files and documentation is in `jenkins/`
+## Azure
+All necessary files and documentation is in `azure/`

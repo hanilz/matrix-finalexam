@@ -4,15 +4,18 @@ trigger:
       - azure
 
 pool:
-  name: 'docker'
+  vmImage: 'ubuntu-latest'
 
 variables:
   - group: HanilDockerhubCreds
-    DOCKER_REGISTRY: 'hanilz'
-    REPO_NAME: 'final-exam-azure'
-    IMAGE_TAG: '$(Build.BuildId)'
-    PROJECT_HOME: '$(Build.SourcesDirectory)/azure'
-  
+  - name: DOCKER_REGISTRY
+    value: 'hanilz'
+  - name: REPO_NAME
+    value: 'final-exam-azure'
+  - name: IMAGE_TAG
+    value: '$(Build.BuildId)'
+  - name: PROJECT_HOME
+    value: '$(Build.SourcesDirectory)/azure'
 
 stages:
 - stage: CloneRepository
@@ -51,7 +54,7 @@ stages:
   - job: Build
     steps:
     - script: |
-        docker build -t $(DOCKER_REGISTRY)/$(REPO_NAME):$(IMAGE_TAG) .
+        docker build -t $(DOCKER_REGISTRY)/$(REPO_NAME):$(IMAGE_TAG) -f $(PROJECT_HOME)/Dockerfile $(PROJECT_HOME)
         docker tag $(DOCKER_REGISTRY)/$(REPO_NAME):$(IMAGE_TAG) $(DOCKER_REGISTRY)/$(REPO_NAME):latest
       displayName: 'Build and Tag Docker Image'
 
@@ -61,7 +64,7 @@ stages:
   - job: Push
     steps:
     - script: |
-        echo $(DOCKER_PASS) | docker login -u $(DOCKER_USER) --password-stdin
+        echo "$(DOCKER_PASS)" | docker login -u "$(DOCKER_USER)" --password-stdin
         docker push $(DOCKER_REGISTRY)/$(REPO_NAME):$(IMAGE_TAG)
         docker push $(DOCKER_REGISTRY)/$(REPO_NAME):latest
       displayName: 'Push Docker Image to Docker Hub'
