@@ -12,3 +12,5 @@ All necessary files and documentation is in `jenkins/`
 All necessary files and documentation is in `azure/`
 ## Kubernetes
 All necessary files and documentation is in `k8s/`
+## helm
+All necessary files and documentation is in `helm/`
