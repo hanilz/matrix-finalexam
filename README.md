@@ -10,3 +10,5 @@ All necessary files and documentation is in `fix-app/`
 All necessary files and documentation is in `jenkins/`
 ## Azure
 All necessary files and documentation is in `azure/`
+## Kubernetes
+All necessary files and documentation is in `k8s/`
