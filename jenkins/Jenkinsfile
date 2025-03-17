@@ -1,0 +1,95 @@
+pipeline {
+    agent {label 'docker'}
+
+    environment {
+        PORT = '5001'
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
+        DOCKER_REGISTRY = 'hanilz'
+        REPO_NAME = "final-exam"
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        PYENV_HOME = "${WORKSPACE}/jenkins/.pyenv"
+        PROJECT_HOME = "${WORKSPACE}/jenkins"
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git branch: 'jekins', url: 'https://github.com/hanilz/matrix-finalexam.git'
+            }
+        }
+        
+        stage('Lint & Security Scan') {
+            parallel {
+                stage('Lint') {  // Each parallel branch needs a stage block
+                    steps {
+                        dir("${PROJECT_HOME}") {
+                            script {
+                                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                                    sh '''
+                                        #!/bin/bash
+                                        if ! command -v flake8 &> /dev/null; then
+                                            echo "Installing flake8..."
+                                            pip install flake8
+                                        fi
+                                        echo 'Running flake8 lint...'
+                                        flake8 "${PROJECT_HOME}/src"
+                                        echo 'Finished flake8 lint.'
+                                    '''
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('Security Scan') {
+                    steps {
+                        dir("${PROJECT_HOME}") {
+                            script {
+                                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                                    sh '''
+                                        #!/bin/bash
+                                        if ! command -v bandit &> /dev/null; then
+                                            echo "Installing bandit..."
+                                            pip install bandit
+                                        fi
+                                        echo 'Running bandit security scan...'
+                                        bandit -r "${PROJECT_HOME}/src"
+                                        echo 'Finished bandit security scan.'
+                                    '''
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                dir("${PROJECT_HOME}") {
+                    sh 'docker build -t ${DOCKER_REGISTRY}/${REPO_NAME}:${BUILD_NUMBER} .'
+                    sh 'docker tag ${DOCKER_REGISTRY}/${REPO_NAME}:${BUILD_NUMBER} ${DOCKER_REGISTRY}/${REPO_NAME}:latest'
+                }
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin'
+                    sh 'docker push ${DOCKER_REGISTRY}/${REPO_NAME}:${BUILD_NUMBER}'
+                    sh 'docker push ${DOCKER_REGISTRY}/${REPO_NAME}:latest'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed! Check logs for details.'
+        }
+    }
+
+}

@@ -1,0 +1,29 @@
+dockerImage:
+  repository: hanilz/final-exam
+  tag: latest
+  pullPolicy: Always
+
+environment:
+  AWS_ACCESS_KEY_ID: "your-access-key"
+  AWS_SECRET_ACCESS_KEY: "your-secret-key"
+  REGION: "us-east-1"
+
+replicaCount: 1
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+service:
+  type: LoadBalancer
+  port: 5001
+
+ingress:
+  enabled: false
+  host: flask-monitor.local
+  path: /
+  pathType: Prefix

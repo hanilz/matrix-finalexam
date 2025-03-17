@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: final-exam-deployment
+spec:
+  replicas: 3  # You can adjust the number of replicas
+  selector:
+    matchLabels:
+      app: final-exam
+  template:
+    metadata:
+      labels:
+        app: final-exam
+    spec:
+      containers:
+        - name: final-exam-container
+          image: hanilz/final-exam:latest  # Ensure this matches the correct tag
+          ports:
+            - containerPort: 5001
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: final-exam-service
+spec:
+  selector:
+    app: final-exam
+  ports:
+    - protocol: TCP
+      port: 5001  # External port
+      targetPort: 5001  # Port inside the container
+  type: LoadBalancer  # Change to NodePort if LoadBalancer is unavailable

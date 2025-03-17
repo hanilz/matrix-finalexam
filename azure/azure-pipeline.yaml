@@ -1,0 +1,73 @@
+trigger:
+  branches:
+    include:
+      - azure
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: HanilDockerhubCreds
+  - name: DOCKER_REGISTRY
+    value: 'hanilz'
+  - name: REPO_NAME
+    value: 'final-exam-azure'
+  - name: IMAGE_TAG
+    value: '$(Build.BuildId)'
+  - name: PROJECT_HOME
+    value: '$(Build.SourcesDirectory)/azure'
+
+stages:
+- stage: CloneRepository
+  displayName: 'Clone Repository'
+  jobs:
+  - job: Clone
+    steps:
+    - checkout: self
+
+- stage: LintAndSecurityScan
+  displayName: 'Lint & Security Scan'
+  jobs:
+  - job: Lint
+    displayName: 'Lint'
+    steps:
+    - script: |
+        pip install flake8
+        echo 'Running flake8 lint...'
+        flake8 $(PROJECT_HOME)/src
+      displayName: 'Run flake8 lint'
+      continueOnError: true
+  
+  - job: SecurityScan
+    displayName: 'Security Scan'
+    steps:
+    - script: |
+        pip install bandit
+        echo 'Running bandit security scan...'
+        bandit -r $(PROJECT_HOME)/src
+      displayName: 'Run bandit security scan'
+      continueOnError: true
+
+- stage: BuildDockerImage
+  displayName: 'Build Docker Image'
+  jobs:
+  - job: Build
+    steps:
+    - script: |
+        docker build -t $(DOCKER_REGISTRY)/$(REPO_NAME):$(IMAGE_TAG) -f $(PROJECT_HOME)/Dockerfile $(PROJECT_HOME)
+        docker tag $(DOCKER_REGISTRY)/$(REPO_NAME):$(IMAGE_TAG) $(DOCKER_REGISTRY)/$(REPO_NAME):latest
+      displayName: 'Build and Tag Docker Image'
+
+- stage: PushToDockerHub
+  displayName: 'Push to Docker Hub'
+  jobs:
+  - job: Push
+    steps:
+    - script: |
+        echo "$(DOCKER_PASS)" | docker login -u "$(DOCKER_USER)" --password-stdin
+        docker push $(DOCKER_REGISTRY)/$(REPO_NAME):$(IMAGE_TAG)
+        docker push $(DOCKER_REGISTRY)/$(REPO_NAME):latest
+      displayName: 'Push Docker Image to Docker Hub'
+      env:
+        DOCKER_USER: $(user)
+        DOCKER_PASS: $(pass)
