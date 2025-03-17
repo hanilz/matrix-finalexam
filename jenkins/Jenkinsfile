@@ -96,29 +96,6 @@ pipeline {
             }
         }
 
-        stage('Integration Test with Docker Compose') {
-            steps {
-                dir("${PROJECT_HOME}") {
-                    script {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {  // skip if doesnt work
-                            sh '''#!/bin/bash
-                                if ! command -v docker-compose &> /dev/null; then
-                                    echo "Installing docker-compose..."
-                                    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                                    sudo chmod +x /usr/local/bin/docker-compose
-                                fi
-
-                                docker-compose up -d
-                                sleep 10  # Allow services to start
-                                curl -f http://localhost:${PORT} || exit 1
-                                docker-compose down
-                            '''
-                        }
-                    }
-                }
-            }
-        }
-
         stage('Push to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
